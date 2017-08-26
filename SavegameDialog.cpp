@@ -1,12 +1,17 @@
 #include "SavegameDialog.h"
 #include "ui_SavegameDialog.h"
 #include "SavegameCopy.h"
+#include "AppEnv.h"
 #include <QMessageBox>
 
 SavegameDialog::SavegameDialog(QWidget *parent) :
     QDialog(parent),
     ui(new Ui::SavegameDialog)
 {
+    // Set Window Flags
+    setWindowFlags(windowFlags()^Qt::WindowContextHelpButtonHint);
+
+    // Setup User Interface
     ui->setupUi(this);
     savegameLabStr = ui->labSavegameText->text();
 
@@ -14,6 +19,10 @@ SavegameDialog::SavegameDialog(QWidget *parent) :
     {
         ui->cmdClose->setIcon(QIcon::fromTheme("dialog-close"));
     }
+
+    // DPI calculation
+    qreal screenRatio = AppEnv::screenRatio();
+    resize(400 * screenRatio, 105 * screenRatio);
 }
 
 SavegameDialog::~SavegameDialog()

@@ -6,9 +6,9 @@ Grand Theft Auto V Savegame and Snapmatic viewer
 - Choosing between multiple Social Club accounts as GTA V profiles IDs
 
 #### Screenshots
-<img src="https://i.imgur.com/OaizCYM.png"/>
-<img src="https://i.imgur.com/MhkGbRU.png"/>
-<img src="https://i.imgur.com/qkCQ26U.png"/>
+<img src="https://i.imgur.com/ncMtWjR.png"/>
+<img src="https://i.imgur.com/4THtwb1.png"/>
+<img src="https://i.imgur.com/STkRl6j.png"/>
 
 #### Build gta5view Debian/Ubuntu
 
@@ -28,4 +28,4 @@ Open the gta5view.pro file with Qt Creator and build it over Qt Creator.<br>
 
 #### Download Binary Releases
 
-Go to <a href="https://github.com/SyDevTeam/gta5view/releases">gta5view release</a> and download the .exe file for Windows, .deb file for Debian/Ubuntu and .rpm file for Red Hat/openSuSE/Fedora.
+Go to <a href="https://github.com/SyDevTeam/gta5view/releases">gta5view release</a> and download the .exe file for Windows, .deb file for Debian/Ubuntu and .dmg file for OS X

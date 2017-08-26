@@ -29,7 +29,10 @@ public:
     static QString parseTitleString(const QByteArray &commitBytes, int maxLength);
     static QString convertDrawStringForLog(const QString &inputStr);
     static QString convertLogStringForDraw(const QString &inputStr);
+#ifndef GTA5VIEW_CMD
     static QString convertBuildedString(const QString &buildedStr);
+#endif
+    static QString escapeString(const QString &toEscape);
 };
 
 #endif // STRINGPARSER_H

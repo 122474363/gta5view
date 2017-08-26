@@ -74,6 +74,7 @@ private slots:
     void profileWidgetDeselected();
     void dialogNextPictureRequested(QWidget *dialog);
     void dialogPreviousPictureRequested(QWidget *dialog);
+    void on_saProfileContent_dropped(const QMimeData *mimeData);
 
 private:
     ProfileDatabase *profileDB;
@@ -94,12 +95,13 @@ private:
     int contentMode;
 
     bool importFile(QString selectedFile, bool notMultiple, int currentId);
+    void importFilesProgress(QStringList selectedFiles);
     bool importSnapmaticPicture(SnapmaticPicture *picture, bool warn = true);
     bool importSavegameData(SavegameData *savegame, QString sgdPath, bool warn = true);
     void pictureLoaded(SnapmaticPicture *picture, bool inserted);
     void savegameLoaded(SavegameData *savegame, QString savegamePath, bool inserted);
-    void savegameDeleted(SavegameWidget *sgdWidget);
-    void pictureDeleted(SnapmaticWidget *picWidget);
+    void savegameDeleted(SavegameWidget *sgdWidget, bool isRemoteEmited = false);
+    void pictureDeleted(SnapmaticWidget *picWidget, bool isRemoteEmited = false);
     void insertSnapmaticIPI(QWidget *widget);
     void insertSavegameIPI(QWidget *widget);
     void sortingProfileInterface();

@@ -16,45 +16,32 @@
 * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 *****************************************************************************/
 
-#ifndef IMPORTDIALOG_H
-#define IMPORTDIALOG_H
+#ifndef UIMODWIDGET_H
+#define UIMODWIDGET_H
 
-#include <QDialog>
+#include <QMimeData>
+#include <QWidget>
+#include <QString>
+#include <QSize>
 
-namespace Ui {
-class ImportDialog;
-}
-
-class ImportDialog : public QDialog
+class UiModWidget : public QWidget
 {
     Q_OBJECT
-
 public:
-    explicit ImportDialog(QWidget *parent = 0);
-    ~ImportDialog();
-    QImage image();
-    QString getImageTitle();
-    void setImage(const QImage &image);
-    bool isDoImport();
+    UiModWidget(QWidget *parent = 0);
+    void setFilesMode(bool enabled);
+    ~UiModWidget();
 
-private slots:
-    void processImage();
-    void on_rbIgnore_clicked();
-    void on_rbKeep_clicked();
-    void on_cbAvatar_clicked();
-    void on_cmdCancel_clicked();
-    void on_cmdOK_clicked();
-    void on_labPicture_labelPainted();
+protected:
+    void dragEnterEvent(QDragEnterEvent *dragEnterEvent);
+    void dropEvent(QDropEvent *dropEvent);
+    void paintEvent(QPaintEvent *paintEvent);
 
 private:
-    Ui::ImportDialog *ui;
-    QImage avatarAreaImage;
-    QString imageTitle;
-    QImage workImage;
-    QImage newImage;
-    bool doImport;
-    int snapmaticResolutionLW;
-    int snapmaticResolutionLH;
+    bool filesMode;
+
+signals:
+    void dropped(const QMimeData *mimeData);
 };
 
-#endif // IMPORTDIALOG_H
+#endif // UIMODWIDGET_H

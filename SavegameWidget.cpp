@@ -23,6 +23,7 @@
 #include "StandardPaths.h"
 #include "SavegameData.h"
 #include "SavegameCopy.h"
+#include "AppEnv.h"
 #include <QFileDialog>
 #include <QMessageBox>
 #include <QSettings>
@@ -45,6 +46,13 @@ SavegameWidget::SavegameWidget(QWidget *parent) :
     ui->cmdView->setVisible(false);
     ui->cmdDelete->setVisible(false);
     ui->cbSelected->setVisible(false);
+
+    qreal screenRatio = AppEnv::screenRatio();
+    ui->labSavegamePic->setFixedSize(48 * screenRatio, 27 * screenRatio);
+
+    QPixmap savegamePixmap(":/img/savegame.png");
+    if (screenRatio != 1) savegamePixmap = savegamePixmap.scaledToHeight(ui->labSavegamePic->height(), Qt::SmoothTransformation);
+    ui->labSavegamePic->setPixmap(savegamePixmap);
 
     QString exportSavegameStr = tr("Export Savegame...");
     Q_UNUSED(exportSavegameStr)
@@ -149,12 +157,15 @@ void SavegameWidget::on_cmdDelete_clicked()
 void SavegameWidget::on_cmdView_clicked()
 {
     SavegameDialog *savegameDialog = new SavegameDialog(this);
-    savegameDialog->setWindowFlags(savegameDialog->windowFlags()^Qt::WindowContextHelpButtonHint);
     savegameDialog->setSavegameData(sgdata, sgdPath, true);
     savegameDialog->setModal(true);
+#ifdef Q_OS_ANDROID
+    // Android ...
+    savegameDialog->showMaximized();
+#else
     savegameDialog->show();
+#endif
     savegameDialog->exec();
-    savegameDialog->deleteLater();
     delete savegameDialog;
 }
 

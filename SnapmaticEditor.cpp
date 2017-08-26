@@ -19,18 +19,20 @@
 #include "SnapmaticEditor.h"
 #include "ui_SnapmaticEditor.h"
 #include "SnapmaticPicture.h"
+#include "StringParser.h"
+#include "AppEnv.h"
+#include <QStringBuilder>
+#include <QTextDocument>
+#include <QInputDialog>
 #include <QMessageBox>
 #include <QDebug>
 #include <QFile>
 
-SnapmaticEditor::SnapmaticEditor(QWidget *parent) :
-    QDialog(parent),
+SnapmaticEditor::SnapmaticEditor(CrewDatabase *crewDB, QWidget *parent) :
+    QDialog(parent), crewDB(crewDB),
     ui(new Ui::SnapmaticEditor)
 {
     ui->setupUi(this);
-    ui->cbSelfie->setVisible(false);
-    ui->cbMugshot->setVisible(false);
-    ui->cbEditor->setVisible(false);
     ui->cmdApply->setDefault(true);
 
     if (QIcon::hasThemeIcon("dialog-apply"))
@@ -42,7 +44,12 @@ SnapmaticEditor::SnapmaticEditor(QWidget *parent) :
         ui->cmdCancel->setIcon(QIcon::fromTheme("dialog-cancel"));
     }
 
+    snapmaticTitle = "";
     smpic = 0;
+
+    // DPI calculation
+    qreal screenRatio = AppEnv::screenRatio();
+    resize(400 * screenRatio, 360 * screenRatio);
 }
 
 SnapmaticEditor::~SnapmaticEditor()
@@ -50,63 +57,45 @@ SnapmaticEditor::~SnapmaticEditor()
     delete ui;
 }
 
-void SnapmaticEditor::on_cbSelfie_toggled(bool checked)
+void SnapmaticEditor::selfie_toggled(bool checked)
 {
     if (checked)
     {
-        ui->cbMugshot->setEnabled(false);
-        ui->cbEditor->setEnabled(false);
+        isSelfie = true;
     }
-    else if (!ui->cbDirector->isChecked())
+    else
     {
-        ui->cbMugshot->setEnabled(true);
-        ui->cbEditor->setEnabled(true);
+        isSelfie = false;
     }
 }
 
 
-void SnapmaticEditor::on_cbMugshot_toggled(bool checked)
+void SnapmaticEditor::mugshot_toggled(bool checked)
 {
     if (checked)
     {
-        ui->cbSelfie->setEnabled(false);
-        ui->cbEditor->setEnabled(false);
+        isMugshot = true;
         ui->cbDirector->setEnabled(false);
+        ui->cbDirector->setChecked(false);
     }
     else
     {
-        ui->cbSelfie->setEnabled(true);
-        ui->cbEditor->setEnabled(true);
+        isMugshot = false;
         ui->cbDirector->setEnabled(true);
     }
 }
 
-void SnapmaticEditor::on_cbDirector_toggled(bool checked)
+void SnapmaticEditor::editor_toggled(bool checked)
 {
     if (checked)
     {
-        ui->cbMugshot->setEnabled(false);
-        ui->cbEditor->setEnabled(false);
-    }
-    else if (!ui->cbSelfie->isChecked())
-    {
-        ui->cbMugshot->setEnabled(true);
-        ui->cbEditor->setEnabled(true);
-    }
-}
-
-void SnapmaticEditor::on_cbEditor_toggled(bool checked)
-{
-    if (checked)
-    {
-        ui->cbSelfie->setEnabled(false);
-        ui->cbMugshot->setEnabled(false);
+        isEditor = true;
         ui->cbDirector->setEnabled(false);
+        ui->cbDirector->setChecked(false);
     }
     else
     {
-        ui->cbSelfie->setEnabled(true);
-        ui->cbMugshot->setEnabled(true);
+        isEditor = false;
         ui->cbDirector->setEnabled(true);
     }
 }
@@ -115,9 +104,9 @@ void SnapmaticEditor::on_rbSelfie_toggled(bool checked)
 {
     if (checked)
     {
-        ui->cbMugshot->setChecked(false);
-        ui->cbEditor->setChecked(false);
-        ui->cbSelfie->setChecked(true);
+        mugshot_toggled(false);
+        editor_toggled(false);
+        selfie_toggled(true);
     }
 }
 
@@ -125,10 +114,9 @@ void SnapmaticEditor::on_rbMugshot_toggled(bool checked)
 {
     if (checked)
     {
-        ui->cbSelfie->setChecked(false);
-        ui->cbEditor->setChecked(false);
-        ui->cbDirector->setChecked(false);
-        ui->cbMugshot->setChecked(true);
+        selfie_toggled(false);
+        editor_toggled(false);
+        mugshot_toggled(true);
     }
 }
 
@@ -136,10 +124,9 @@ void SnapmaticEditor::on_rbEditor_toggled(bool checked)
 {
     if (checked)
     {
-        ui->cbSelfie->setChecked(false);
-        ui->cbMugshot->setChecked(false);
-        ui->cbDirector->setChecked(false);
-        ui->cbEditor->setChecked(true);
+        selfie_toggled(false);
+        mugshot_toggled(false);
+        editor_toggled(true);
     }
 }
 
@@ -147,9 +134,9 @@ void SnapmaticEditor::on_rbCustom_toggled(bool checked)
 {
     if (checked)
     {
-        ui->cbSelfie->setChecked(false);
-        ui->cbMugshot->setChecked(false);
-        ui->cbEditor->setChecked(false);
+        selfie_toggled(false);
+        mugshot_toggled(false);
+        editor_toggled(false);
     }
 }
 
@@ -158,20 +145,21 @@ void SnapmaticEditor::setSnapmaticPicture(SnapmaticPicture *picture)
     smpic = picture;
     localSpJson = smpic->getSnapmaticProperties();
     ui->rbCustom->setChecked(true);
-    ui->cbSelfie->setChecked(localSpJson.isSelfie);
-    ui->cbMugshot->setChecked(localSpJson.isMug);
-    ui->cbEditor->setChecked(localSpJson.isFromRSEditor);
+    crewID = localSpJson.crewID;
+    isSelfie = localSpJson.isSelfie;
+    isMugshot = localSpJson.isMug;
+    isEditor = localSpJson.isFromRSEditor;
     ui->cbDirector->setChecked(localSpJson.isFromDirector);
     ui->cbMeme->setChecked(localSpJson.isMeme);
-    if (ui->cbSelfie->isChecked())
+    if (isSelfie)
     {
         ui->rbSelfie->setChecked(true);
     }
-    else if (ui->cbMugshot->isChecked())
+    else if (isMugshot)
     {
         ui->rbMugshot->setChecked(true);
     }
-    else if (ui->cbEditor->isChecked())
+    else if (isEditor)
     {
         ui->rbEditor->setChecked(true);
     }
@@ -179,6 +167,43 @@ void SnapmaticEditor::setSnapmaticPicture(SnapmaticPicture *picture)
     {
         ui->rbCustom->setChecked(true);
     }
+    setSnapmaticCrew(returnCrewName(crewID));
+    setSnapmaticTitle(picture->getPictureTitle());
+}
+
+void SnapmaticEditor::setSnapmaticTitle(const QString &title)
+{
+    if (title.length() > 39)
+    {
+        snapmaticTitle = title.left(39);
+    }
+    else
+    {
+        snapmaticTitle = title;
+    }
+    QString editStr = QString("<a href=\"g5e://edittitle\" style=\"text-decoration: none;\">%1</a>").arg(tr("Edit"));
+    QString titleStr = tr("Title: %1 (%2)").arg(StringParser::escapeString(snapmaticTitle), editStr);
+    ui->labTitle->setText(titleStr);
+    if (SnapmaticPicture::verifyTitle(snapmaticTitle))
+    {
+        ui->labAppropriate->setText(tr("Appropriate: %1").arg(QString("<span style=\"color: green\">%1</a>").arg(tr("Yes", "Yes, should work fine"))));
+    }
+    else
+    {
+        ui->labAppropriate->setText(tr("Appropriate: %1").arg(QString("<span style=\"color: red\">%1</a>").arg(tr("No", "No, could lead to issues"))));
+    }
+}
+
+void SnapmaticEditor::setSnapmaticCrew(const QString &crew)
+{
+    QString editStr = QString("<a href=\"g5e://editcrew\" style=\"text-decoration: none;\">%1</a>").arg(tr("Edit"));
+    QString crewStr = tr("Crew: %1 (%2)").arg(StringParser::escapeString(crew), editStr);
+    ui->labCrew->setText(crewStr);
+}
+
+QString SnapmaticEditor::returnCrewName(int crewID_)
+{
+    return crewDB->getCrewName(crewID_);
 }
 
 void SnapmaticEditor::on_cmdCancel_clicked()
@@ -192,9 +217,10 @@ void SnapmaticEditor::on_cmdApply_clicked()
     {
         qualifyAvatar();
     }
-    localSpJson.isSelfie = ui->cbSelfie->isChecked();
-    localSpJson.isMug = ui->cbMugshot->isChecked();
-    localSpJson.isFromRSEditor = ui->cbEditor->isChecked();
+    localSpJson.crewID = crewID;
+    localSpJson.isSelfie = isSelfie;
+    localSpJson.isMug = isMugshot;
+    localSpJson.isFromRSEditor = isEditor;
     localSpJson.isFromDirector = ui->cbDirector->isChecked();
     localSpJson.isMeme = ui->cbMeme->isChecked();
     if (smpic)
@@ -205,15 +231,24 @@ void SnapmaticEditor::on_cmdApply_clicked()
         {
             adjustedFileName.remove(adjustedFileName.length() - 7, 7);
         }
-        QString backupFileName = adjustedFileName + ".bak";
+        QString backupFileName = adjustedFileName % ".bak";
         if (!QFile::exists(backupFileName))
         {
             QFile::copy(adjustedFileName, backupFileName);
         }
+        SnapmaticProperties fallbackProperties = smpic->getSnapmaticProperties();
+        QString fallbackTitle = smpic->getPictureTitle();
         smpic->setSnapmaticProperties(localSpJson);
+        smpic->setPictureTitle(snapmaticTitle);
         if (!smpic->exportPicture(originalFileName))
         {
             QMessageBox::warning(this, tr("Snapmatic Properties"), tr("Patching of Snapmatic Properties failed because of I/O Error"));
+            smpic->setSnapmaticProperties(fallbackProperties);
+            smpic->setPictureTitle(fallbackTitle);
+        }
+        else
+        {
+            smpic->emitUpdate();
         }
     }
     close();
@@ -248,6 +283,58 @@ void SnapmaticEditor::on_cbQualify_toggled(bool checked)
         if (ui->rbSelfie->isChecked() || ui->rbCustom->isChecked())
         {
             ui->cbDirector->setEnabled(true);
+        }
+    }
+}
+
+void SnapmaticEditor::on_labTitle_linkActivated(const QString &link)
+{
+    if (link == "g5e://edittitle")
+    {
+        bool ok;
+        QString newTitle = QInputDialog::getText(this, tr("Snapmatic Title"), tr("New Snapmatic title:"), QLineEdit::Normal, snapmaticTitle, &ok, windowFlags());
+        if (ok && !newTitle.isEmpty())
+        {
+            setSnapmaticTitle(newTitle);
+        }
+    }
+}
+
+void SnapmaticEditor::on_labCrew_linkActivated(const QString &link)
+{
+    if (link == "g5e://editcrew")
+    {
+        bool ok;
+        int indexNum = 0;
+        QStringList itemList;
+        QStringList crewList = crewDB->getCrews();
+        if (!crewList.contains(QLatin1String("0")))
+        {
+            crewList.append(QLatin1String("0"));
+        }
+        crewList.sort();
+        foreach(const QString &crew, crewList)
+        {
+            itemList.append(QString("%1 (%2)").arg(crew, returnCrewName(crew.toInt())));
+        }
+        if (crewList.contains(QString::number(crewID)))
+        {
+            indexNum = crewList.indexOf(QRegExp(QString::number(crewID)));
+        }
+        QString newCrew = QInputDialog::getItem(this, tr("Snapmatic Crew"), tr("New Snapmatic crew:"), itemList, indexNum, true, &ok, windowFlags());
+        if (ok && !newCrew.isEmpty())
+        {
+            if (newCrew.contains(" ")) newCrew = newCrew.split(" ").at(0);
+            if (newCrew.length() > 10) return;
+            foreach (const QChar &crewChar, newCrew)
+            {
+                if (!crewChar.isNumber())
+                {
+                    return;
+                }
+            }
+            crewID = newCrew.toInt();
+            setSnapmaticCrew(returnCrewName(crewID));
         }
     }
 }

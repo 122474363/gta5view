@@ -18,10 +18,18 @@
 
 #include "ImportDialog.h"
 #include "ui_ImportDialog.h"
+#include "AppEnv.h"
 #include <QPainter>
 #include <QPixmap>
 #include <QImage>
 #include <QDebug>
+
+// IMAGES VALUES
+#define snapmaticResolutionW 960
+#define snapmaticResolutionH 536
+#define snapmaticAvatarResolution 470
+#define snapmaticAvatarPlacementW 145
+#define snapmaticAvatarPlacementH 66
 
 ImportDialog::ImportDialog(QWidget *parent) :
     QDialog(parent),
@@ -41,6 +49,15 @@ ImportDialog::ImportDialog(QWidget *parent) :
     }
 
     ui->rbKeep->setChecked(true);
+
+    qreal screenRatio = AppEnv::screenRatio();
+    snapmaticResolutionLW = 430 * screenRatio;
+    snapmaticResolutionLH = 240 * screenRatio;
+    setMinimumSize(430 * screenRatio, 380 * screenRatio);
+    setMaximumSize(430 * screenRatio, 380 * screenRatio);
+    setFixedSize(430 * screenRatio, 380 * screenRatio);
+    ui->vlButtom->setSpacing(6 * screenRatio);
+    ui->vlButtom->setContentsMargins(9 * screenRatio, 6 * screenRatio, 9 * screenRatio, 9 * screenRatio);
 }
 
 ImportDialog::~ImportDialog()
@@ -51,7 +68,7 @@ ImportDialog::~ImportDialog()
 void ImportDialog::processImage()
 {
     QImage snapmaticImage = workImage;
-    QPixmap snapmaticPixmap(960, 536);
+    QPixmap snapmaticPixmap(snapmaticResolutionW, snapmaticResolutionH);
     snapmaticPixmap.fill(Qt::black);
     QPainter snapmaticPainter(&snapmaticPixmap);
     if (ui->cbAvatar->isChecked())
@@ -61,24 +78,23 @@ void ImportDialog::processImage()
         int diffHeight = 0;
         if (ui->rbKeep->isChecked())
         {
-            snapmaticImage = snapmaticImage.scaled(470, 470, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+            snapmaticImage = snapmaticImage.scaled(snapmaticAvatarResolution, snapmaticAvatarResolution, Qt::KeepAspectRatio, Qt::SmoothTransformation);
             if (snapmaticImage.width() > snapmaticImage.height())
             {
-                diffHeight = 470 - snapmaticImage.height();
+                diffHeight = snapmaticAvatarResolution - snapmaticImage.height();
                 diffHeight = diffHeight / 2;
             }
             else if (snapmaticImage.width() < snapmaticImage.height())
             {
-                diffWidth = 470 - snapmaticImage.width();
+                diffWidth = snapmaticAvatarResolution - snapmaticImage.width();
                 diffWidth = diffWidth / 2;
             }
         }
         else
         {
-            snapmaticImage = snapmaticImage.scaled(470, 470, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+            snapmaticImage = snapmaticImage.scaled(snapmaticAvatarResolution, snapmaticAvatarResolution, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
         }
-        snapmaticPainter.drawImage(0, 0, avatarAreaImage);
-        snapmaticPainter.drawImage(145 + diffWidth, 66 + diffHeight, snapmaticImage);
+        snapmaticPainter.drawImage(snapmaticAvatarPlacementW + diffWidth, snapmaticAvatarPlacementH + diffHeight, snapmaticImage);
         imageTitle = "Custom Avatar";
     }
     else
@@ -88,28 +104,28 @@ void ImportDialog::processImage()
         int diffHeight = 0;
         if (ui->rbKeep->isChecked())
         {
-            snapmaticImage = snapmaticImage.scaled(960, 536, Qt::KeepAspectRatio, Qt::SmoothTransformation);
-            if (snapmaticImage.width() != 960)
+            snapmaticImage = snapmaticImage.scaled(snapmaticResolutionW, snapmaticResolutionH, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+            if (snapmaticImage.width() != snapmaticResolutionW)
             {
-                diffWidth = 960 - snapmaticImage.width();
+                diffWidth = snapmaticResolutionW - snapmaticImage.width();
                 diffWidth = diffWidth / 2;
             }
-            else if (snapmaticImage.height() != 536)
+            else if (snapmaticImage.height() != snapmaticResolutionH)
             {
-                diffHeight = 536 - snapmaticImage.height();
+                diffHeight = snapmaticResolutionH - snapmaticImage.height();
                 diffHeight = diffHeight / 2;
             }
         }
         else
         {
-            snapmaticImage = snapmaticImage.scaled(960, 536, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+            snapmaticImage = snapmaticImage.scaled(snapmaticResolutionW, snapmaticResolutionH, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
         }
         snapmaticPainter.drawImage(0 + diffWidth, 0 + diffHeight, snapmaticImage);
         imageTitle = "Custom Picture";
     }
     snapmaticPainter.end();
     newImage = snapmaticPixmap.toImage();
-    ui->labPicture->setPixmap(snapmaticPixmap.scaled(430, 240, Qt::IgnoreAspectRatio, Qt::SmoothTransformation));
+    ui->labPicture->setPixmap(snapmaticPixmap.scaled(snapmaticResolutionLW, snapmaticResolutionLH, Qt::IgnoreAspectRatio, Qt::SmoothTransformation));
 }
 
 QImage ImportDialog::image()
@@ -161,4 +177,14 @@ void ImportDialog::on_cmdOK_clicked()
 {
     doImport = true;
     close();
+}
+
+void ImportDialog::on_labPicture_labelPainted()
+{
+    if (ui->cbAvatar->isChecked())
+    {
+        QPainter labelPainter(ui->labPicture);
+        labelPainter.drawImage(0, 0, avatarAreaImage.scaled(snapmaticResolutionLW, snapmaticResolutionLH, Qt::IgnoreAspectRatio, Qt::SmoothTransformation));
+        labelPainter.end();
+    }
 }

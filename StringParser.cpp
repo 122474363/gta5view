@@ -18,7 +18,10 @@
 
 #include "StringParser.h"
 #include "config.h"
+#include <QTextDocument>
+#ifndef GTA5VIEW_CMD
 #include <QApplication>
+#endif
 #include <QTextCodec>
 #include <QByteArray>
 #include <QFileInfo>
@@ -35,7 +38,7 @@ QString StringParser::parseTitleString(const QByteArray &commitBytes, int maxLen
 {
     Q_UNUSED(maxLength)
     QString retStr = QTextCodec::codecForName("UTF-16LE")->toUnicode(commitBytes).trimmed();
-    retStr.remove(QChar((char)0x00));
+    retStr.remove(QChar('\x00'));
     return retStr;
 }
 
@@ -51,6 +54,7 @@ QString StringParser::convertLogStringForDraw(const QString &inputStr)
     return outputStr.replace("&c;",",").replace("&u;","&");
 }
 
+#ifndef GTA5VIEW_CMD
 QString StringParser::convertBuildedString(const QString &buildedStr)
 {
     QString outputStr = buildedStr;
@@ -59,4 +63,14 @@ QString StringParser::convertBuildedString(const QString &buildedStr)
     outputStr.replace("$RUNDIR", QFileInfo(qApp->applicationFilePath()).absoluteDir().absolutePath());
     outputStr.replace("$SEPARATOR", QDir::separator());
     return outputStr;
+}
+#endif
+
+QString StringParser::escapeString(const QString &toEscape)
+{
+#if QT_VERSION >= 0x050000
+    return toEscape.toHtmlEscaped();
+#else
+    return Qt::escape(toEscape);
+#endif
 }

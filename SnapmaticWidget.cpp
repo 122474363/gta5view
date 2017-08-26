@@ -23,6 +23,8 @@
 #include "DatabaseThread.h"
 #include "PictureDialog.h"
 #include "PictureExport.h"
+#include "StringParser.h"
+#include "AppEnv.h"
 #include "config.h"
 #include <QMessageBox>
 #include <QPixmap>
@@ -84,6 +86,10 @@ void SnapmaticWidget::setSnapmaticPicture(SnapmaticPicture *picture)
     picPath = picture->getPictureFilePath();
     picTitl = picture->getPictureTitl();
     picStr = picture->getPictureStr();
+    QObject::connect(picture, SIGNAL(updated()), this, SLOT(snapmaticUpdated()));
+
+    qreal screenRatio = AppEnv::screenRatio();
+    ui->labPicture->setFixedSize(48 * screenRatio, 27 * screenRatio);
 
     QPixmap SnapmaticPixmap = QPixmap::fromImage(picture->getImage().scaled(ui->labPicture->width(), ui->labPicture->height(), Qt::IgnoreAspectRatio, Qt::SmoothTransformation), Qt::AutoColor);
     ui->labPicStr->setText(picStr + "\n" + picTitl + "");
@@ -94,6 +100,15 @@ void SnapmaticWidget::setSnapmaticPicture(SnapmaticPicture *picture)
     adjustTextColor();
 }
 
+void SnapmaticWidget::snapmaticUpdated()
+{
+    // Current only strings get updated
+    picPath = smpic->getPictureFilePath();
+    picTitl = smpic->getPictureTitl();
+    picStr = smpic->getPictureStr();
+    ui->labPicStr->setText(picStr + "\n" + picTitl + "");
+}
+
 void SnapmaticWidget::on_cmdView_clicked()
 {
     QSettings settings(GTA5SYNC_APPVENDOR, GTA5SYNC_APPSTR);
@@ -102,7 +117,6 @@ void SnapmaticWidget::on_cmdView_clicked()
     settings.endGroup();
 
     PictureDialog *picDialog = new PictureDialog(profileDB, crewDB, this);
-    picDialog->setWindowFlags(picDialog->windowFlags()^Qt::WindowContextHelpButtonHint);
     picDialog->setSnapmaticPicture(smpic, true);
     picDialog->setModal(true);
 
@@ -115,11 +129,16 @@ void SnapmaticWidget::on_cmdView_clicked()
     if (navigationBar) picDialog->addPreviousNextButtons();
 
     // show picture dialog
+#ifdef Q_OS_ANDROID
+    // Android ...
+    picDialog->showMaximized();
+#else
     picDialog->show();
     if (navigationBar) picDialog->stylizeDialog();
     //picDialog->adaptNewDialogSize();
     picDialog->setMinimumSize(picDialog->size());
     picDialog->setMaximumSize(picDialog->size());
+#endif
     picDialog->exec();
     delete picDialog;
 }
@@ -136,22 +155,24 @@ void SnapmaticWidget::on_cmdExport_clicked()
 
 void SnapmaticWidget::on_cmdDelete_clicked()
 {
+    if (deletePicture()) emit pictureDeleted();
+}
+
+bool SnapmaticWidget::deletePicture()
+{
     int uchoice = QMessageBox::question(this, tr("Delete picture"), tr("Are you sure to delete %1 from your Snapmatic pictures?").arg("\""+picStr+"\""), QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
     if (uchoice == QMessageBox::Yes)
     {
-        if (!QFile::exists(picPath))
+        if (smpic->deletePicFile())
         {
-            emit pictureDeleted();
-        }
-        else if(QFile::remove(picPath))
-        {
-            emit pictureDeleted();
+            return true;
         }
         else
         {
             QMessageBox::warning(this, tr("Delete picture"), tr("Failed at deleting %1 from your Snapmatic pictures").arg("\""+picStr+"\""));
         }
     }
+    return false;
 }
 
 void SnapmaticWidget::mousePressEvent(QMouseEvent *ev)
@@ -271,7 +292,7 @@ void SnapmaticWidget::makePictureVisibleSlot()
 
 void SnapmaticWidget::editSnapmaticProperties()
 {
-    SnapmaticEditor *snapmaticEditor = new SnapmaticEditor(this);
+    SnapmaticEditor *snapmaticEditor = new SnapmaticEditor(crewDB, this);
     snapmaticEditor->setWindowFlags(snapmaticEditor->windowFlags()^Qt::WindowContextHelpButtonHint);
     snapmaticEditor->setSnapmaticPicture(smpic);
     snapmaticEditor->setModal(true);

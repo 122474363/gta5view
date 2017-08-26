@@ -432,7 +432,6 @@ int main(int argc, char *argv[])
         SnapmaticPicture picture;
 
         bool readOk = picture.readingPictureFromFile(arg1);
-        picDialog.setWindowFlags(picDialog.windowFlags()^Qt::WindowContextHelpButtonHint);
         picDialog.setWindowIcon(IconLoader::loadingAppIcon());
         picDialog.setSnapmaticPicture(&picture, readOk);
 
@@ -459,7 +458,6 @@ int main(int argc, char *argv[])
         SavegameData savegame;
 
         bool readOk = savegame.readingSavegameFromFile(arg1);
-        savegameDialog.setWindowFlags(savegameDialog.windowFlags()^Qt::WindowContextHelpButtonHint);
         savegameDialog.setWindowIcon(IconLoader::loadingAppIcon());
         savegameDialog.setSavegameData(&savegame, arg1, readOk);
 
@@ -482,7 +480,11 @@ int main(int argc, char *argv[])
     UserInterface uiWindow(&profileDB, &crewDB, &threadDB);
     uiWindow.setWindowIcon(IconLoader::loadingAppIcon());
     uiWindow.setupDirEnv();
+#ifdef Q_OS_ANDROID
+    uiWindow.showMaximized();
+#else
     uiWindow.show();
+#endif
 
     threadLoop.exec();
 
