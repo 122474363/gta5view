@@ -6,10 +6,14 @@ language: cpp
 service:
   - docker
 
-env:
-  global:
-    - PACKAGE_VERSION="1.5.0" BUILD_SCRIPT="linux_travis.sh"
-    - PACKAGE_VERSION="1.5.0" BUILD_SCRIPT="windows_travis.sh" QT_SELECT="qt5-x86_64-w64-mingw32"
+matrix:
+  include:
+    - env:
+        global:
+          - PACKAGE_VERSION="1.5.0" BUILD_SCRIPT="linux_travis.sh"
+    - env:
+        global:
+          - PACKAGE_VERSION="1.5.0" BUILD_SCRIPT="windows_travis.sh" QT_SELECT="qt5-x86_64-w64-mingw32"
 
 script:
   - .travis/travis.sh
