@@ -10,11 +10,11 @@ matrix:
   include:
     - env:
         global:
-          - PACKAGE_VERSION="1.5.0"
+          - PACKAGE_VERSION=1.5.0
           - BUILD_SCRIPT=linux_travis.sh
     - env:
         global:
-          - PACKAGE_VERSION="1.5.0"
+          - PACKAGE_VERSION=1.5.0
           - BUILD_SCRIPT=windows_travis.sh
           - QT_SELECT=qt5-x86_64-w64-mingw32
 
